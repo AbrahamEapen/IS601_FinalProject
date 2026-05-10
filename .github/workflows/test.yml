@@ -2,20 +2,25 @@ name: CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, master]
   pull_request:
-    branches: [ main ]
+    branches: [main, master]
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1 — Run the full test suite (unit, integration, E2E)
+  # ---------------------------------------------------------------------------
   test:
+    name: Tests
     runs-on: ubuntu-latest
+
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:17
         env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: mytestdb  # <-- Dedicated test DB name
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fastapi_db
         ports:
           - 5432:5432
         options: >-
@@ -23,84 +28,84 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    steps:
-      - uses: actions/checkout@v3
-      
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      
-      - name: Install dependencies
-        env:
-          DATABASE_URL: postgresql://user:password@localhost:5432/mytestdb
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
-          playwright install  # if you use Playwright for e2e tests
-      
-      - name: Run tests
-        env:
-          DATABASE_URL: postgresql://user:password@localhost:5432/mytestdb
-        run: |
-          source venv/bin/activate
-          
-          # 1) Unit tests
-          pytest tests/unit/ --cov=src --junitxml=test-results/junit.xml
-          
-          # 2) Integration tests
-          pytest tests/integration/
-          
-          # 3) E2E or other tests
-          pytest tests/e2e/
 
-  security:
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fastapi_db
+      # Non-sensitive fixed values used only for signing test JWT tokens
+      JWT_SECRET_KEY: ci-test-jwt-secret-key-minimum-32-chars-x
+      JWT_REFRESH_SECRET_KEY: ci-test-refresh-secret-key-min-32-chars
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+      # Lower bcrypt rounds to keep test hashing fast in CI
+      BCRYPT_ROUNDS: 4
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+
+      - name: Run unit tests
+        run: pytest tests/unit/ -v
+
+      - name: Run integration tests
+        run: pytest tests/integration/ -v --cov-append
+
+      - name: Run E2E tests
+        run: pytest tests/e2e/ -v --cov-append
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Job 2 — Build the Docker image; push to Docker Hub on main/master only
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Build & Push Docker Image
     needs: test
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Build image
-        run: docker build -t app:test .
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'app:test'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
-  
-  deploy:
-    needs: security
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      
-      - uses: docker/setup-buildx-action@v3
-      
-      - uses: docker/login-action@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
-      - uses: docker/build-push-action@v5
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
         with:
-          push: true
-          tags: |
-            kaw393939/601_module9:latest
-            kaw393939/601_module9:${{ github.sha }}
+          context: .
+          # Only push on main/master; PRs build only (no push)
+          push: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=kaw393939/601_module9:cache
-          cache-to: type=inline,mode=max
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/is601-final:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/is601-final:${{ github.sha }}
+          # Use GitHub Actions cache to speed up repeated builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

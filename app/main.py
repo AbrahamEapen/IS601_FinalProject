@@ -37,7 +37,7 @@ from app.models.calculation import Calculation  # Database model for calculation
 from app.models.user import User  # Database model for users
 from app.schemas.calculation import CalculationBase, CalculationResponse, CalculationUpdate  # API request/response schemas
 from app.schemas.token import TokenResponse  # API token schema
-from app.schemas.user import UserCreate, UserResponse, UserLogin  # User schemas
+from app.schemas.user import UserCreate, UserResponse, UserLogin, UserUpdate, PasswordUpdate  # User schemas
 from app.database import Base, get_db, engine  # Database connection
 
 
@@ -148,18 +148,99 @@ def view_calculation_page(request: Request, calc_id: str):
 def edit_calculation_page(request: Request, calc_id: str):
     """
     Page for editing a calculation (Update).
-    
-    Part of the BREAD (Browse, Read, Edit, Add, Delete) pattern:
-    - This is the Edit page
-    
-    Args:
-        request: The FastAPI request object (required by Jinja2)
-        calc_id: UUID of the calculation to edit
-        
-    Returns:
-        HTMLResponse: Rendered template with calculation ID passed to frontend
     """
     return templates.TemplateResponse("edit_calculation.html", {"request": request, "calc_id": calc_id})
+
+@app.get("/profile", response_class=HTMLResponse, tags=["web"])
+def profile_page(request: Request):
+    """
+    User profile page for updating profile info and changing password.
+    """
+    return templates.TemplateResponse("profile.html", {"request": request})
+
+
+# ------------------------------------------------------------------------------
+# User Profile API Endpoints
+# ------------------------------------------------------------------------------
+# NOTE: get_current_active_user returns a UserResponse (Pydantic model) that
+# only has a valid .id field — everything else is a placeholder. All three
+# routes below use that id to load the real SQLAlchemy User from the database.
+
+def _get_db_user(current_user=Depends(get_current_active_user), db: Session = Depends(get_db)) -> User:
+    """Load the full SQLAlchemy User row for the authenticated request."""
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
+
+
+@app.get("/users/me", response_model=UserResponse, tags=["users"])
+def get_current_user_profile(
+    db_user: User = Depends(_get_db_user),
+):
+    """Return the authenticated user's profile data."""
+    return db_user
+
+
+@app.put("/users/me", response_model=UserResponse, tags=["users"])
+def update_profile(
+    user_update: UserUpdate,
+    db_user: User = Depends(_get_db_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Update the authenticated user's profile info (username, email, first/last name).
+    Returns 409 if the new username or email is already taken by another user.
+    """
+    from sqlalchemy import or_
+
+    update_data = user_update.model_dump(exclude_none=True)
+
+    # Check for conflicts on unique fields
+    if "email" in update_data or "username" in update_data:
+        conditions = []
+        if "email" in update_data:
+            conditions.append(User.email == update_data["email"])
+        if "username" in update_data:
+            conditions.append(User.username == update_data["username"])
+
+        conflict = (
+            db.query(User)
+            .filter(or_(*conditions), User.id != db_user.id)
+            .first()
+        )
+        if conflict:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Username or email already taken",
+            )
+
+    db_user.update(**update_data)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
+@app.put("/users/me/password", status_code=status.HTTP_204_NO_CONTENT, tags=["users"])
+def change_password(
+    password_update: PasswordUpdate,
+    db_user: User = Depends(_get_db_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Change the authenticated user's password.
+    Requires the current password for verification.
+    """
+    if not db_user.verify_password(password_update.current_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+
+    db_user.password = User.hash_password(password_update.new_password)
+    db_user.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    return None
 
 
 # ------------------------------------------------------------------------------

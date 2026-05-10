@@ -1,0 +1,309 @@
+{% extends "layout.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto py-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-2">My Profile</h1>
+  <p class="text-gray-500 mb-8">Manage your account information and password</p>
+
+  <!-- Tab Navigation -->
+  <div class="flex space-x-1 mb-6 border-b border-gray-200">
+    <button id="tabProfile" onclick="showTab('profile')"
+      class="tab-btn px-4 py-2 text-sm font-medium text-blue-700 border-b-2 border-blue-700 focus:outline-none">
+      Profile Info
+    </button>
+    <button id="tabPassword" onclick="showTab('password')"
+      class="tab-btn px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent focus:outline-none">
+      Change Password
+    </button>
+  </div>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Profile Info Section                                                 -->
+  <!-- ------------------------------------------------------------------ -->
+  <div id="sectionProfile">
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">Profile Information</h2>
+
+      <div id="profileAlert" class="hidden mb-4 px-4 py-3 rounded-md text-sm font-medium"></div>
+
+      <form id="profileForm" class="space-y-4" novalidate>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <input id="first_name" name="first_name" type="text" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+            <p id="first_name_err" class="mt-1 text-xs text-red-600 hidden"></p>
+          </div>
+          <div>
+            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <input id="last_name" name="last_name" type="text" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+            <p id="last_name_err" class="mt-1 text-xs text-red-600 hidden"></p>
+          </div>
+        </div>
+
+        <div>
+          <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+          <input id="username" name="username" type="text" required minlength="3" maxlength="50"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+          <p id="username_err" class="mt-1 text-xs text-red-600 hidden"></p>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+          <input id="email" name="email" type="email" required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+          <p id="email_err" class="mt-1 text-xs text-red-600 hidden"></p>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" id="profileSubmitBtn"
+            class="px-6 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------------ -->
+  <!-- Change Password Section                                              -->
+  <!-- ------------------------------------------------------------------ -->
+  <div id="sectionPassword" class="hidden">
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">Change Password</h2>
+
+      <div id="passwordAlert" class="hidden mb-4 px-4 py-3 rounded-md text-sm font-medium"></div>
+
+      <form id="passwordForm" class="space-y-4" novalidate>
+        <div>
+          <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+          <input id="current_password" name="current_password" type="password" required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+          <p id="current_password_err" class="mt-1 text-xs text-red-600 hidden"></p>
+        </div>
+
+        <div>
+          <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+          <input id="new_password" name="new_password" type="password" required minlength="8"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+          <p class="mt-1 text-xs text-gray-500">Min 8 chars, uppercase, lowercase, digit, special character</p>
+          <p id="new_password_err" class="mt-1 text-xs text-red-600 hidden"></p>
+        </div>
+
+        <div>
+          <label for="confirm_new_password" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+          <input id="confirm_new_password" name="confirm_new_password" type="password" required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+          <p id="confirm_new_password_err" class="mt-1 text-xs text-red-600 hidden"></p>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" id="passwordSubmitBtn"
+            class="px-6 py-2 bg-blue-700 text-white text-sm font-medium rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+            Change Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+
+// ---- Tab helpers ----
+function showTab(tab) {
+  const isProfile = tab === 'profile';
+  document.getElementById('sectionProfile').classList.toggle('hidden', !isProfile);
+  document.getElementById('sectionPassword').classList.toggle('hidden', isProfile);
+
+  const activeClasses = ['text-blue-700', 'border-blue-700'];
+  const inactiveClasses = ['text-gray-500', 'border-transparent'];
+
+  const tabProfile = document.getElementById('tabProfile');
+  const tabPassword = document.getElementById('tabPassword');
+
+  if (isProfile) {
+    tabProfile.classList.add(...activeClasses);
+    tabProfile.classList.remove(...inactiveClasses);
+    tabPassword.classList.remove(...activeClasses);
+    tabPassword.classList.add(...inactiveClasses);
+  } else {
+    tabPassword.classList.add(...activeClasses);
+    tabPassword.classList.remove(...inactiveClasses);
+    tabProfile.classList.remove(...activeClasses);
+    tabProfile.classList.add(...inactiveClasses);
+  }
+}
+
+// ---- Alert helpers ----
+function showAlert(elementId, message, type) {
+  const el = document.getElementById(elementId);
+  el.textContent = message;
+  el.className = `mb-4 px-4 py-3 rounded-md text-sm font-medium ${
+    type === 'success'
+      ? 'bg-green-100 border border-green-500 text-green-800'
+      : 'bg-red-100 border border-red-500 text-red-800'
+  }`;
+  el.classList.remove('hidden');
+}
+
+function hideAlert(elementId) {
+  document.getElementById(elementId).classList.add('hidden');
+}
+
+function showFieldError(fieldId, message) {
+  const el = document.getElementById(fieldId + '_err');
+  if (el) { el.textContent = message; el.classList.remove('hidden'); }
+  const input = document.getElementById(fieldId);
+  if (input) input.classList.add('border-red-500');
+}
+
+function clearFieldErrors(fields) {
+  fields.forEach(f => {
+    const err = document.getElementById(f + '_err');
+    if (err) { err.textContent = ''; err.classList.add('hidden'); }
+    const input = document.getElementById(f);
+    if (input) input.classList.remove('border-red-500');
+  });
+}
+
+// ---- Client-side password strength ----
+function validatePasswordStrength(pw) {
+  if (pw.length < 8) return "Password must be at least 8 characters long";
+  if (!/[A-Z]/.test(pw)) return "Password must contain at least one uppercase letter";
+  if (!/[a-z]/.test(pw)) return "Password must contain at least one lowercase letter";
+  if (!/[0-9]/.test(pw)) return "Password must contain at least one digit";
+  if (![...pw].some(c => SPECIAL_CHARS.includes(c))) return "Password must contain at least one special character";
+  return null;
+}
+
+// ---- Token helpers ----
+function getAuthHeaders() {
+  const token = localStorage.getItem('access_token');
+  return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : {};
+}
+
+function requireAuth() {
+  if (!localStorage.getItem('access_token')) {
+    window.location.href = '/login';
+    return false;
+  }
+  return true;
+}
+
+// ---- Load profile data on page load ----
+async function loadProfile() {
+  if (!requireAuth()) return;
+  try {
+    const resp = await fetch('/users/me', { headers: getAuthHeaders() });
+    if (resp.status === 401) { window.location.href = '/login'; return; }
+    if (!resp.ok) throw new Error('Failed to load profile');
+    const user = await resp.json();
+    document.getElementById('first_name').value = user.first_name;
+    document.getElementById('last_name').value = user.last_name;
+    document.getElementById('username').value = user.username;
+    document.getElementById('email').value = user.email;
+  } catch (err) {
+    showAlert('profileAlert', err.message || 'Failed to load profile', 'error');
+  }
+}
+
+// ---- Profile form submit ----
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearFieldErrors(['first_name', 'last_name', 'username', 'email']);
+  hideAlert('profileAlert');
+
+  const first_name = document.getElementById('first_name').value.trim();
+  const last_name = document.getElementById('last_name').value.trim();
+  const username = document.getElementById('username').value.trim();
+  const email = document.getElementById('email').value.trim();
+
+  let valid = true;
+  if (!first_name) { showFieldError('first_name', 'First name is required'); valid = false; }
+  if (!last_name) { showFieldError('last_name', 'Last name is required'); valid = false; }
+  if (!username || username.length < 3) { showFieldError('username', 'Username must be at least 3 characters'); valid = false; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showFieldError('email', 'Valid email is required'); valid = false; }
+  if (!valid) return;
+
+  const btn = document.getElementById('profileSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const resp = await fetch('/users/me', {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ first_name, last_name, username, email })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showAlert('profileAlert', data.detail || 'Update failed', 'error');
+    } else {
+      localStorage.setItem('username', data.username);
+      showAlert('profileAlert', 'Profile updated successfully!', 'success');
+      const welcome = document.getElementById('layoutUserWelcome');
+      if (welcome) welcome.textContent = `Welcome, ${data.username}!`;
+    }
+  } catch (err) {
+    showAlert('profileAlert', 'An error occurred. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Changes';
+  }
+});
+
+// ---- Password form submit ----
+document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearFieldErrors(['current_password', 'new_password', 'confirm_new_password']);
+  hideAlert('passwordAlert');
+
+  const current_password = document.getElementById('current_password').value;
+  const new_password = document.getElementById('new_password').value;
+  const confirm_new_password = document.getElementById('confirm_new_password').value;
+
+  let valid = true;
+  if (!current_password) { showFieldError('current_password', 'Current password is required'); valid = false; }
+  const strengthErr = validatePasswordStrength(new_password);
+  if (strengthErr) { showFieldError('new_password', strengthErr); valid = false; }
+  if (new_password !== confirm_new_password) { showFieldError('confirm_new_password', 'Passwords do not match'); valid = false; }
+  if (current_password === new_password) { showFieldError('new_password', 'New password must differ from current password'); valid = false; }
+  if (!valid) return;
+
+  const btn = document.getElementById('passwordSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Changing...';
+
+  try {
+    const resp = await fetch('/users/me/password', {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ current_password, new_password, confirm_new_password })
+    });
+    if (resp.status === 204) {
+      document.getElementById('passwordForm').reset();
+      showAlert('passwordAlert', 'Password changed successfully! Please log in again with your new password.', 'success');
+      setTimeout(() => {
+        localStorage.clear();
+        window.location.href = '/login';
+      }, 3000);
+    } else {
+      const data = await resp.json();
+      showAlert('passwordAlert', data.detail || 'Password change failed', 'error');
+    }
+  } catch (err) {
+    showAlert('passwordAlert', 'An error occurred. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Change Password';
+  }
+});
+
+document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}
