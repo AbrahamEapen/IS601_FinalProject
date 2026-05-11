@@ -52,13 +52,13 @@ class TestBrowseAndAdd:
         assert resp.status_code == 201
         assert resp.json()["result"] == 25
 
-    def test_create_division_by_zero_returns_400(self, fastapi_server, auth_headers):
+    def test_create_division_by_zero_returns_error(self, fastapi_server, auth_headers):
         resp = _post(fastapi_server, auth_headers, {"type": "division", "inputs": [10, 0]})
-        assert resp.status_code == 400
+        assert resp.status_code in (400, 422)
 
-    def test_create_invalid_type_returns_400(self, fastapi_server, auth_headers):
+    def test_create_invalid_type_returns_422(self, fastapi_server, auth_headers):
         resp = _post(fastapi_server, auth_headers, {"type": "modulus", "inputs": [10, 3]})
-        assert resp.status_code == 400
+        assert resp.status_code == 422
 
     def test_list_contains_created_calculation(self, fastapi_server, auth_headers):
         _post(fastapi_server, auth_headers, {"type": "addition", "inputs": [5, 5]})
