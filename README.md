@@ -1,8 +1,51 @@
 # IS601 Final Project — Calculations API
 
-A FastAPI web application for managing mathematical calculations, with full user authentication and profile management.
+A full-stack web application built with **FastAPI** that lets authenticated users create, save, and manage mathematical calculations through a clean browser interface. The app pairs a RESTful JSON API with server-rendered Jinja2 templates styled with Tailwind CSS, backed by PostgreSQL, and secured with JWT authentication.
 
 **Docker Hub:** [docsnoop/is601-final](https://hub.docker.com/repository/docker/docsnoop/is601-final/general)
+
+---
+
+## Overview
+
+### What the application does
+
+Users register for an account, log in, and land on a personal dashboard where they can perform calculations and browse their full history. Every calculation is persisted to the database and tied to the user who created it, so each user sees only their own data.
+
+### Supported calculation types
+
+| Operation | Description | Example |
+|---|---|---|
+| Addition | Sum of all inputs | `[10, 5, 3]` → `18` |
+| Subtraction | First value minus each subsequent value | `[20, 5, 3]` → `12` |
+| Multiplication | Product of all inputs | `[2, 3, 4]` → `24` |
+| Division | First value divided by each subsequent value | `[100, 2, 5]` → `10` |
+
+### Key features
+
+**Authentication & security**
+- Account registration with strong password requirements (uppercase, lowercase, digit, special character)
+- JWT-based login returning a short-lived access token and a longer-lived refresh token, each signed with separate secrets
+- bcrypt password hashing with a configurable work factor
+- Token blacklisting via Redis so logout immediately invalidates the token
+
+**Calculation management (BREAD)**
+- **Browse** — dashboard table listing all of the user's calculations with type, inputs, result, and timestamp
+- **Read** — dedicated view page for a single calculation
+- **Edit** — update the inputs of an existing calculation; the result is recomputed automatically
+- **Add** — form to create a new calculation; result is computed server-side on save
+- **Delete** — remove a calculation with a confirmation prompt
+
+**User profile**
+- View and update profile information (username, email, first name, last name)
+- Change password with current-password verification and strength enforcement
+- All profile changes are validated both client-side (real-time) and server-side
+
+**Developer experience**
+- Interactive API documentation at `/docs` (Swagger UI) and `/redoc`
+- Full test suite: unit, integration, and E2E (Playwright) layers
+- CI/CD pipeline via GitHub Actions — tests → Docker build → push to Docker Hub
+- One-command local setup with Docker Compose (app + PostgreSQL + pgAdmin)
 
 ---
 
