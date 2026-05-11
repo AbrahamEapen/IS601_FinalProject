@@ -155,10 +155,11 @@ def test_invalid_inputs_for_division():
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------
-def test_addition_single_element():
-    """Single-element list is valid for addition."""
+def test_addition_single_element_raises():
+    """Addition requires at least two numbers."""
     calc = Addition(user_id=dummy_user_id(), inputs=[42])
-    assert calc.get_result() == 42
+    with pytest.raises(ValueError, match="Inputs must be a list with at least two numbers."):
+        calc.get_result()
 
 def test_addition_with_negatives():
     calc = Addition(user_id=dummy_user_id(), inputs=[-5, 3, -2])
