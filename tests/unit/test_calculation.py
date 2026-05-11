@@ -150,3 +150,47 @@ def test_invalid_inputs_for_division():
     division = Division(user_id=dummy_user_id(), inputs=[10])
     with pytest.raises(ValueError, match="Inputs must be a list with at least two numbers."):
         division.get_result()
+
+
+# ---------------------------------------------------------------------------
+# Edge cases
+# ---------------------------------------------------------------------------
+def test_addition_single_element():
+    """Single-element list is valid for addition."""
+    calc = Addition(user_id=dummy_user_id(), inputs=[42])
+    assert calc.get_result() == 42
+
+def test_addition_with_negatives():
+    calc = Addition(user_id=dummy_user_id(), inputs=[-5, 3, -2])
+    assert calc.get_result() == -4
+
+def test_subtraction_with_negatives():
+    calc = Subtraction(user_id=dummy_user_id(), inputs=[0, -10])
+    assert calc.get_result() == 10
+
+def test_multiplication_includes_zero():
+    calc = Multiplication(user_id=dummy_user_id(), inputs=[5, 0, 100])
+    assert calc.get_result() == 0
+
+def test_multiplication_with_negatives():
+    calc = Multiplication(user_id=dummy_user_id(), inputs=[-2, 3])
+    assert calc.get_result() == -6
+
+@pytest.mark.parametrize("inputs,expected", [
+    ([10, 2], 5.0),
+    ([1, 3], pytest.approx(1 / 3)),
+    ([100, 4, 5], 5.0),
+])
+def test_division_parametrized(inputs, expected):
+    calc = Division(user_id=dummy_user_id(), inputs=inputs)
+    assert calc.get_result() == expected
+
+def test_addition_empty_list_raises():
+    calc = Addition(user_id=dummy_user_id(), inputs=[])
+    with pytest.raises((ValueError, Exception)):
+        calc.get_result()
+
+def test_addition_non_numeric_raises():
+    calc = Addition(user_id=dummy_user_id(), inputs=["a", "b"])
+    with pytest.raises((ValueError, TypeError)):
+        calc.get_result()

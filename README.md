@@ -2,6 +2,8 @@
 
 A FastAPI web application for managing mathematical calculations, with full user authentication and profile management.
 
+**Docker Hub:** [docsnoop/is601-final](https://hub.docker.com/repository/docker/docsnoop/is601-final/general)
+
 ---
 
 ## Table of Contents
@@ -17,7 +19,8 @@ A FastAPI web application for managing mathematical calculations, with full user
 4. [Database Migrations (Alembic)](#database-migrations-alembic)
 5. [Environment Variables](#environment-variables)
 6. [Project Structure](#project-structure)
-7. [Git & SSH Setup](#git--ssh-setup)
+7. [Docker Hub](#docker-hub)
+8. [Git & SSH Setup](#git--ssh-setup)
 
 ---
 
@@ -125,15 +128,21 @@ CREATE DATABASE fastapi_test_db;
 
 **5. Configure environment variables**
 
-Create a `.env` file in the project root and fill in your own values:
+Copy the provided template and fill in your own values:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` — at minimum set these:
 
 ```env
-DATABASE_URL=postgresql://<db-user>:<db-password>@localhost:5432/fastapi_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=<your-db-password>
+POSTGRES_DB=fastapi_db
+DATABASE_URL=postgresql://postgres:<your-db-password>@localhost:5432/fastapi_db
 JWT_SECRET_KEY=<your-random-secret-min-32-chars>
 JWT_REFRESH_SECRET_KEY=<your-random-secret-min-32-chars>
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-BCRYPT_ROUNDS=12
 PGADMIN_DEFAULT_EMAIL=<your-pgadmin-email>
 PGADMIN_DEFAULT_PASSWORD=<your-pgadmin-password>
 ```
@@ -471,6 +480,23 @@ ssh -T git@github.com
 ```bash
 git clone <repository-url>
 cd <repository-directory>
+```
+
+---
+
+## Docker Hub
+
+The production image is published automatically on every push to `main`/`master` via GitHub Actions.
+
+| Resource | Link |
+|---|---|
+| Repository | [docsnoop/is601-final](https://hub.docker.com/repository/docker/docsnoop/is601-final/general) |
+| Latest tag | `docsnoop/is601-final:latest` |
+
+**Pull the latest image:**
+
+```bash
+docker pull docsnoop/is601-final:latest
 ```
 
 ---

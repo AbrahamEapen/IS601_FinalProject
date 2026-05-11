@@ -135,13 +135,25 @@ def fake_user_data() -> Dict[str, str]:
 @pytest.fixture
 def test_user(db_session: Session) -> User:
     """
-    Create and return a single test user in the database.
+    Create and return a single test user in the database with a properly hashed
+    password. The plain-text password is accessible via user.plain_password so
+    tests that need to authenticate via the API can do so.
     """
     user_data = create_fake_user()
-    user = User(**user_data)
+    plain_password = user_data["password"]
+    user = User(
+        first_name=user_data["first_name"],
+        last_name=user_data["last_name"],
+        email=user_data["email"],
+        username=user_data["username"],
+        password=User.hash_password(plain_password),
+        is_active=True,
+        is_verified=False,
+    )
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
+    user.plain_password = plain_password  # non-column attr for auth tests
     logger.info(f"Created test user ID: {user.id}")
     return user
 
@@ -150,13 +162,58 @@ def seed_users(db_session: Session, request) -> List[User]:
     """
     Seed multiple test users in the database. By default, 5 users are created
     unless a 'param' value is provided (e.g., via @pytest.mark.parametrize).
+    Each user has a .plain_password non-column attribute for auth tests.
     """
     num_users = getattr(request, "param", 5)
-    users = [User(**create_fake_user()) for _ in range(num_users)]
-    db_session.add_all(users)
+    result = []
+    for _ in range(num_users):
+        user_data = create_fake_user()
+        plain_password = user_data["password"]
+        user = User(
+            first_name=user_data["first_name"],
+            last_name=user_data["last_name"],
+            email=user_data["email"],
+            username=user_data["username"],
+            password=User.hash_password(plain_password),
+            is_active=True,
+            is_verified=False,
+        )
+        db_session.add(user)
+        result.append((user, plain_password))
     db_session.commit()
-    logger.info(f"Seeded {len(users)} users.")
-    return users
+    for user, plain_password in result:
+        user.plain_password = plain_password
+    logger.info(f"Seeded {len(result)} users.")
+    return [u for u, _ in result]
+
+# ======================================================================================
+# Auth Helper Fixture
+# ======================================================================================
+@pytest.fixture
+def auth_headers(fastapi_server: str) -> Dict[str, str]:
+    """
+    Register a fresh user via the API and return Bearer auth headers.
+    Use this in integration tests instead of duplicating register+login logic.
+    """
+    user_data = create_fake_user()
+    resp = requests.post(f"{fastapi_server}auth/register", json={
+        "first_name": user_data["first_name"],
+        "last_name": user_data["last_name"],
+        "email": user_data["email"],
+        "username": user_data["username"],
+        "password": user_data["password"],
+        "confirm_password": user_data["password"],
+    })
+    assert resp.status_code == 201, f"Registration failed: {resp.text}"
+
+    login_resp = requests.post(f"{fastapi_server}auth/login", json={
+        "username": user_data["username"],
+        "password": user_data["password"],
+    })
+    assert login_resp.status_code == 200, f"Login failed: {login_resp.text}"
+    token = login_resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
 
 # ======================================================================================
 # FastAPI Server Fixture
